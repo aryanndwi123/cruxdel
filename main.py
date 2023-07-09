@@ -1,7 +1,9 @@
 import random
+from collections import deque
 
 toss = ["Heads", "Tails"]
 choose_to = ["Bat", "Bowl"]
+run = [-1, 0, 1, 2, 3, 4, 6]
 
 
 class Player:
@@ -19,18 +21,15 @@ class Team:
         self.name = name
         self.players = players
         self.captain = None
-        self.batsmen = []
-        self.bowlers = []
-
+        self.batsmen = players
+        self.bowlers = players[6:]
     def select_captain(self, captain):
         self.captain = captain
-
-    def choose_batsmen(self, count):
-        self.batsmen = random.sample(self.players, count)
-
-    def choose_bowler(self):
-        self.bowlers = random.choice(self.players)
-
+    def next_batsman(self, pos):
+        return self.batsmen[pos]
+    
+    def next_bowler(self, pos):
+        return self.bowlers[pos]
 
 class Field:
     def __init__(self, size, fan_ratio, pitch_conditions, home_advantage):
@@ -40,15 +39,22 @@ class Field:
         self.home_advantage = home_advantage
 
 
+
+
+
 class Umpire:
-    def __init__(self):
+    def __init__(self, overs):    
         self.score = 0
         self.wickets = 0
-        self.overs = 0
+        self.overs = overs
 
-    def simulate_ball(self, batsman, bowler):
-        
-        pass
+    def simulate_ball(self):
+        outcome = random.choice(run)
+        if outcome > -1:
+            self.score += outcome
+        else:
+            self.wickets += 1
+        return outcome
 
 
 class Commentator:
@@ -58,12 +64,17 @@ class Commentator:
         print(comment)
 
 
+
 class Match:
     def __init__(self, team1, team2, field):
         self.team1 = team1
         self.team2 = team2
         self.field = field
+        self.umpire = Umpire(5)        
         self.commentator = Commentator()
+        self.batsmen = []
+        self.bowlers = []
+        
 
     def toss_coin(self):
         self.commentator.provide_commentary(
@@ -74,17 +85,47 @@ class Match:
         coin_outcome = random.choice(toss)
         self.commentator.provide_commentary("And it's "+coin_outcome)
         choose = random.choice(choose_to)
+        toss_res = {}
         if call == coin_outcome:
             self.commentator.provide_commentary(
-                team1.captain.name+" chooses to "+choose)
+                team1.name+" wins the toss. " + team1.captain.name+" chooses to "+choose)
+            if choose == "Bat":
+                toss_res["Bat"] = team1
+                toss_res["Bowl"] = team2
+            else:
+                toss_res["Bat"] = team2
+                toss_res["Bowl"] = team1
         else:
-            self.commentator.provide_commentary(
-                team2.captain.name+" chooses to "+choose)
+            self.commentator.provide_commentary(team2.name+" wins the toss. " + team2.captain.name+" chooses to "+choose)
+            if choose == "Bat":
+                toss_res["Bat"] = team2
+                toss_res["Bowl"] = team1
+            else:
+                toss_res["Bat"] = team1
+                toss_res["Bowl"] = team2
+        return toss_res
 
-    def start_match(self):
-        # Perform toss, choose batting/bowling order, etc.
-        # Start the match and simulate ball-by-ball actions
-        pass
+    def start_match(self, res):
+        self.batsmen.append(res['Bat'].next_batsman(0))
+        self.batsmen.append(res['Bat'].next_batsman(1))
+        pos = 2
+        over = 0
+        all_out = False
+        self.bowlers.append(res['Bowl'].next_bowler(over))
+        for i in range(self.umpire.overs):
+            for j in range(6):
+                if self.umpire.wickets == 10:
+                    all_out = True
+                    break
+                outcome = self.umpire.simulate_ball()
+                if outcome == -1:
+                    print("OUT")
+                else:
+                    print(outcome)
+            if all_out:
+                break
+        print(self.umpire.score)
+                
 
     def change_innings(self):
         # Change the batting and bowling teams for the second innings
@@ -125,9 +166,10 @@ team1.select_captain(player6)
 
 team2 = Team("England", [player12, player13, player14, player15, player16,
              player17, player18, player19, player20, player21, player22])
-team2.select_captain(player13)
+team2.select_captain(player17)
 
 field = Field("Large", 0.8, "Dry", 0.1)
 
 match = Match(team1, team2, field)
-match.toss_coin()
+toss_res = match.toss_coin()
+match.start_match(toss_res)
