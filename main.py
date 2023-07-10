@@ -3,6 +3,7 @@ from collections import deque
 
 toss = ["Heads", "Tails"]
 choose_to = ["Bat", "Bowl"]
+dismissals = ["Bowled", "Out by LBW", "Run-out", "Caught", "Stumped-out"]
 run = [-1, 0, 1, 2, 3, 4, 6]
 
 
@@ -17,6 +18,7 @@ class Player:
         self.runs_scored = 0
         self.runs_given = 0
         self.wickets_taken = 0
+        self.dismissal = ""
 
 
 class Team:
@@ -54,7 +56,34 @@ class Umpire:
         self.overs = overs
 
     def simulate_ball(self, bat, bowl):
-        outcome = random.choice(run)
+        batting_rating = bat.batting
+        bowling_rating = bowl.bowling
+        fielding_rating = bat.fielding
+        running_rating = bat.running
+
+        total_rating = batting_rating + bowling_rating + fielding_rating + running_rating
+
+        boundary_prob = batting_rating / total_rating
+        six_prob = boundary_prob / 6
+        four_prob = (boundary_prob - six_prob) / 4
+        three_prob = (1 - boundary_prob) / 3
+        two_prob = three_prob / 2
+        one_prob = two_prob / 2
+        zero_prob = 1 - (boundary_prob + three_prob + two_prob + one_prob)
+
+        outcome = random.random()
+
+        if outcome < boundary_prob:
+            outcome = random.choices([4, 6], weights=[four_prob, six_prob])[0]
+        elif outcome < boundary_prob + three_prob:
+            outcome = 3
+        elif outcome < boundary_prob + three_prob + two_prob:
+            outcome = 2
+        elif outcome < boundary_prob + three_prob + two_prob + one_prob:
+            outcome = 1
+        else:
+            outcome = -1
+            
         if outcome > -1:
             bat.runs_scored += outcome
             bowl.runs_given += outcome
@@ -69,16 +98,17 @@ class Commentator:
     def __init__(self):
         pass
     def provide_commentary(self, comment):
+        print("")
         print(comment)
 
 
 
 class Match:
-    def __init__(self, team1, team2, field):
+    def __init__(self, team1, team2, field, total_overs):
         self.team1 = team1
         self.team2 = team2
         self.field = field
-        self.umpire = Umpire(10)        
+        self.umpire = Umpire(total_overs)        
         self.commentator = Commentator()
         self.stricker = None
         self.non_stricker = None
@@ -130,8 +160,10 @@ class Match:
                     break
                 outcome = self.umpire.simulate_ball(self.stricker, self.bowler)
                 if outcome == -1:
+                    dismissal_type = random.choice(dismissals)
+                    self.stricker.dismissal = dismissal_type
                     self.commentator.provide_commentary(
-                        self.stricker.name+" is OUT")
+                        self.stricker.name+" is "+dismissal_type)
                     self.stricker = res['Bat'].next_batsman(
                         self.umpire.wickets+1)
                 else:
@@ -170,7 +202,8 @@ class Match:
             "What an extra ordinary match. Let's take a look at the Scoreboard")
         self.commentator.provide_commentary(team1.name+" Batting")
         for i in team1.batsmen:
-            self.commentator.provide_commentary(i.name+" "+str(i.runs_scored))
+            self.commentator.provide_commentary(
+                i.name+" "+str(i.runs_scored)+" "+i.dismissal)
         print("**********************")
         self.commentator.provide_commentary(team1.name+" Bowling")
         for i in team1.bowlers:
@@ -179,7 +212,8 @@ class Match:
         print("**********************")
         self.commentator.provide_commentary(team2.name+" Batting")
         for i in team2.batsmen:
-            self.commentator.provide_commentary(i.name+" "+str(i.runs_scored))
+            self.commentator.provide_commentary(
+                i.name+" "+str(i.runs_scored)+" "+i.dismissal)
         print("**********************")
         self.commentator.provide_commentary(team2.name+" Bowling")
         for i in team2.bowlers:
