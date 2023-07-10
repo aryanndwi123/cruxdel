@@ -1,6 +1,6 @@
 # Cricket Match Simulation
 
-This is a Python script that simulates a cricket match between two teams. The script uses randomization to determine the outcome of each ball and provides commentary throughout the match.
+This is a Python script based on the `Object Oriented Programmng Concept` that simulates a cricket match between two teams. The script uses randomization to determine the outcome of each ball and provides commentary throughout the match.
 
 ## Prerequisites
 
