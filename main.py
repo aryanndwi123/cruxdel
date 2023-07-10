@@ -6,10 +6,9 @@ choose_to = ["Bat", "Bowl"]
 dismissals = ["Bowled", "Out by LBW", "Run-out", "Caught", "Stumped-out"]
 run = [-1, 0, 1, 2, 3, 4, 6]
 
-
 class Player:
     def __init__(self, name, batting, bowling, fielding, running, experience):
-        
+        # Initialize player attributes
         self.name = name
         self.batting = batting
         self.bowling = bowling
@@ -21,10 +20,9 @@ class Player:
         self.wickets_taken = 0
         self.dismissal = ""
 
-
 class Team:
     def __init__(self, name, players):
-       
+        # Initialize team attributes
         self.name = name
         self.players = players
         self.captain = None
@@ -32,37 +30,36 @@ class Team:
         self.bowlers = players[5:]
 
     def select_captain(self, captain):
+        # Set the team captain
         self.captain = captain
 
     def next_batsman(self, pos):
-        
+        # Get the next batsman in the lineup
         pos = pos % len(self.batsmen)
         return self.batsmen[pos]
 
     def next_bowler(self, pos):
-        
+        # Get the next bowler in the lineup
         pos = pos % len(self.bowlers)
         return self.bowlers[pos]
 
-
 class Field:
     def __init__(self, size, fan_ratio, pitch_conditions, home_advantage):
-        
+        # Initialize field attributes
         self.size = size
         self.fan_ratio = fan_ratio
         self.pitch_conditions = pitch_conditions
         self.home_advantage = home_advantage
 
-
 class Umpire:
     def __init__(self, overs):
-        
+        # Initialize umpire attributes
         self.score = 0
         self.wickets = 0
         self.overs = overs
 
     def simulate_ball(self, bat, bowl):
-        
+        # Simulate a ball being played
         batting_rating = bat.batting
         bowling_rating = bowl.bowling
         fielding_rating = bat.fielding
@@ -101,21 +98,19 @@ class Umpire:
 
         return outcome
 
-
 class Commentator:
     def __init__(self):
-        
+        # Initialize commentator
         pass
 
     def provide_commentary(self, comment):
-        
+        # Provide commentary
         print("")
         print(comment)
 
-
 class Match:
     def __init__(self, team1, team2, field, total_overs):
-        
+        # Initialize match attributes
         self.team1 = team1
         self.team2 = team2
         self.field = field
@@ -126,29 +121,30 @@ class Match:
         self.bowler = None
 
     def toss_coin(self):
-        
+        # Perform the toss
         self.commentator.provide_commentary(
-            "What a beautiful day today! It's a "+field.size+" & "+field.pitch_conditions+" field. Both captains walking into the field for the toss.")
+            "What a beautiful day today! It's a " + field.size + " & " + field.pitch_conditions + " field. Both captains walking into the field for the toss.")
         call = random.choice(toss)
         self.commentator.provide_commentary(
-            call+" is the call by "+team1.captain.name)
+            call + " is the call by " + team1.captain.name)
         coin_outcome = random.choice(toss)
-        self.commentator.provide_commentary("And it's "+coin_outcome)
+        self.commentator.provide_commentary("And it's " + coin_outcome)
         choose = random.choice(choose_to)
         toss_res = {}
-        
+
         if call == coin_outcome:
             self.commentator.provide_commentary(
-                team1.name+" wins the toss. " + team1.captain.name+" chooses to "+choose)
+                team1.name + " wins the toss. " + team1.captain.name + " chooses to " + choose)
             if choose == "Bat":
                 toss_res["Bat"] = team1
                 toss_res["Bowl"] = team2
             else:
                 toss_res["Bat"] = team2
                 toss_res["Bowl"] = team1
+       
         else:
             self.commentator.provide_commentary(
-                team2.name+" wins the toss. " + team2.captain.name+" chooses to "+choose)
+                team2.name + " wins the toss. " + team2.captain.name + " chooses to " + choose)
             if choose == "Bat":
                 toss_res["Bat"] = team2
                 toss_res["Bowl"] = team1
@@ -156,9 +152,8 @@ class Match:
                 toss_res["Bat"] = team1
                 toss_res["Bowl"] = team2
         return toss_res
-
     def start_match(self, res, target):
-        
+        # Start the match
         self.stricker = res['Bat'].next_batsman(0)
         self.non_stricker = res['Bat'].next_batsman(1)
         self.umpire.score = 0
@@ -177,13 +172,13 @@ class Match:
                     dismissal_type = random.choice(dismissals)
                     self.stricker.dismissal = dismissal_type
                     self.commentator.provide_commentary(
-                        self.stricker.name+" is "+dismissal_type)
+                        self.stricker.name + " is " + dismissal_type)
                     self.stricker = res['Bat'].next_batsman(
-                        self.umpire.wickets+1)
+                        self.umpire.wickets + 1)
 
                 else:
                     self.commentator.provide_commentary(
-                        self.stricker.name + " scores "+str(outcome)+" runs")
+                        self.stricker.name + " scores " + str(outcome) + " runs")
                     if self.umpire.score >= target:
                         end = True
                         break
@@ -195,59 +190,33 @@ class Match:
             over += 1
             self.bowler = res['Bowl'].next_bowler(over)
             if end | over == self.umpire.overs:
-                
                 self.commentator.provide_commentary("Innings over")
                 break
             temp = self.stricker
             self.stricker = self.non_stricker
             self.non_stricker = temp
             self.commentator.provide_commentary("Over change")
+            self.commentator.provide_commentary( "Score : {}-{} ".format(self.umpire.score,self.umpire.wickets))
+            
         self.commentator.provide_commentary(
-            "Total runs scored: "+str(self.umpire.score))
+            "Total runs scored: " + str(self.umpire.score))
         return self.umpire.score
-
     def change_innings(self, res, target):
-        
+        # Change innings
         self.commentator.provide_commentary("Next innings")
         temp = res['Bowl']
         res['Bowl'] = res['Bat']
         res['Bat'] = temp
         
         return self.start_match(res, target)
-
     def end_match(self, res, target, chase):
-        
-        self.commentator.provide_commentary(
-            "What an extra ordinary match. Let's take a look at the Scoreboard")
-        self.commentator.provide_commentary(team1.name+" Batting")
-        for i in team1.batsmen:
-            self.commentator.provide_commentary(
-                i.name+" "+str(i.runs_scored)+" "+i.dismissal)
-        print("**********************")
-        self.commentator.provide_commentary(team1.name+" Bowling")
-        for i in team1.bowlers:
-            self.commentator.provide_commentary(
-                i.name+" "+str(i.runs_given)+" "+str(i.wickets_taken))
-        print("**********************")
-        self.commentator.provide_commentary(team2.name+" Batting")
-        for i in team2.batsmen:
-            self.commentator.provide_commentary(
-                i.name+" "+str(i.runs_scored)+" "+i.dismissal)
-
-        print("**********************")
-        self.commentator.provide_commentary(team2.name+" Bowling")
-        for i in team2.bowlers:
-            self.commentator.provide_commentary(
-                i.name+" "+str(i.runs_given)+" "+str(i.wickets_taken))
+        # End the match and display scoreboard
 
         if chase >= target:
-            self.commentator.provide_commentary(res['Bat'].name+" wins")
+            self.commentator.provide_commentary(res['Bat'].name + " wins !!!")
         else:
-            self.commentator.provide_commentary(res['Bowl'].name+" wins")
-
-
-  
-    # Team India
+            self.commentator.provide_commentary(res['Bowl'].name + " wins !!!")
+# Team India
 player1 = Player("Rohit Sharma", 0.8, 0.2, 0.99, 0.8, 0.9)
 player2 = Player("Rishab Pant", 0.8, 0.2, 0.99, 0.8, 0.9)
 player3 = Player("Virat Kohli", 0.8, 0.2, 0.99, 0.8, 0.9)
@@ -272,6 +241,7 @@ player19 = Player("Chris Woakes", 0.8, 0.2, 0.99, 0.8, 0.9)
 player20 = Player("Mark Wood", 0.8, 0.2, 0.99, 0.8, 0.9)
 player21 = Player("Stuart Broad", 0.8, 0.2, 0.99, 0.8, 0.9)
 player22 = Player("Ollie Robinson", 0.8, 0.2, 0.99, 0.8, 0.9)
+
 team1 = Team("India", [player1, player2, player3, player4, player5,
              player6, player7, player8, player9, player10, player11])
 team1.select_captain(player6)
@@ -282,12 +252,10 @@ team2.select_captain(player17)
 
 field = Field("Large", 0.8, "Dry", 0.1)
 
-match = Match(team1, team2, field)
+match = Match(team1, team2, field,10)
 toss_res = match.toss_coin()
 target = match.start_match(toss_res, 99999)
-chase = match.change_innings(toss_res, target+1)
+chase = match.change_innings(toss_res, target + 1)
 match.end_match(toss_res, target, chase)
-
-
-
+    
 
